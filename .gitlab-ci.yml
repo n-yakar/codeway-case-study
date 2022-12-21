@@ -1,0 +1,53 @@
+.gitlab-ci.yml
+---
+stages:
+  - build
+  - deploy
+
+build-dev-environment:
+  stage: build
+  environment: development
+  script: 
+    - echo "Install dependencies for development and testing"
+    - echo "Check the nodemon version and update if requried for the development environment."
+    - nodemon-version
+    - npm install --save-dev nodemon
+  
+
+build-prod-environment:
+  stage: build
+  environment: production
+  script:
+    - echo "Install dotenv"
+    - npm install --save dotenv
+
+    - echo "Install express"
+    - npm install express
+
+    - echo "Install helmet"
+    - npm install helmet
+
+    - echo "Install morgan"
+    - npm i morgan
+
+    - echo "Install node-postgres"
+    - npm i node-postgres
+
+    - echo "Install pg"
+    - npm install pg
+
+
+deploy-app-to-container:
+  stage: deploy
+  environment: production 
+  image: docker
+  services:
+    - docker:dind
+  before_script:
+    - echo "Log into docker container registry in GitLab"
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin
+  script: 
+    - docker build -t $CI_REGISTRY_IMAGE .
+    - docker push $CI_REGISTRY_IMAGE
+  after_script:
+    - docker logout
